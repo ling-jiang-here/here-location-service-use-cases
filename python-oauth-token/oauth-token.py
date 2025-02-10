@@ -1,4 +1,4 @@
-# this version is longer, but it works as expected.
+# this version is longer, but it works as expected too.
 
 import requests, time, urllib.parse, hmac, hashlib, binascii
 from base64 import b64encode
