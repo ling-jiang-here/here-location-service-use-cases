@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="text/javascript" src='../test-credentials.js'></script> 
+    <title>Static Map with Routing Info</title>
+</head>
+<body>
+    <div id="map"></div>
+    <script>
+        // Sample locations in Riga, Latvia
+        const origin = { lat: 56.9517121, lng: 24.0806104 };
+        const destination = { lat: 56.9481938, lng: 24.110582 };
+        // // Following sample does not work for too large polyline
+        // const origin = { lat: 34.103131, lng: -118.416253 };
+        // const destination = { lat: 40.696516, lng: -75.280817 };
+
+        async function getRouteDetails(origin, destination) {
+            // Construct the URL for routing API with the provided coordinates and API key
+            const routingURL = `https://router.hereapi.com/v8/routes?transportMode=car&origin=${origin.lat},${origin.lng}&destination=${destination.lat},${destination.lng}&return=polyline&apiKey=${window.apikey}`;
+
+            // Fetch route information using the constructed URL
+            const response = await fetch(routingURL);
+
+            // Parse the response data as JSON
+            const data = await response.json();
+
+            // Check if there is at least one route in the response
+            const route = data.routes?.[0];
+            if (!route) {
+                throw new Error('No routes found');
+            }
+
+            // Extract departure, arrival, and polyline details from the first route's section
+            const section = route.sections[0];
+            const departure = section.departure.place.location;
+            const arrival = section.arrival.place.location;
+            const polyline = section.polyline;
+
+            // Return an object containing departure, arrival, and polyline information
+            return { departure, arrival, polyline };
+        }
+
+        async function displayStaticMap(arrival, departure, polyline) {
+            try {
+                // Construct the URL for the static map image
+                const staticMapUrl = `https://image.maps.hereapi.com/mia/v3/base/mc/overlay:padding=64/800x400/png?apiKey=${window.apikey}&overlay=point:${departure.lat},${departure.lng};label=Departure|${arrival.lat},${arrival.lng};label=Arrival|size=large;text-color=%23972E2B;text-outline-color=%23FFF;outline-width=2&overlay=line:${polyline}&features=pois:disabled&style=lite.day&scaleBar=km`;
+
+                // Create a new Image element
+                const mapImage = new Image();
+
+                // Set the source URL of the image to the constructed static map URL
+                mapImage.src = staticMapUrl;
+
+                // Find the HTML element with the ID 'map' and append the image to it
+                document.getElementById('map').appendChild(mapImage);
+            } catch (error) {
+                // If any errors occur, log them to the console
+                console.error('Error:', error);
+            }
+        }
+
+        async function main() {
+            try {
+                const routeData = await getRouteDetails(origin, destination);
+                displayStaticMap(routeData.arrival, routeData.departure, routeData.polyline);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        main();
+
+    </script>
+</body>
+</html>
